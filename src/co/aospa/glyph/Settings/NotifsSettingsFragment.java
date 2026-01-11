@@ -16,8 +16,10 @@
 
 package co.aospa.glyph.Settings;
 
+
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
@@ -41,7 +43,9 @@ import java.util.List;
 
 import co.aospa.glyph.R;
 import co.aospa.glyph.Constants.Constants;
+import co.aospa.glyph.Manager.AnimationManager;
 import co.aospa.glyph.Manager.SettingsManager;
+import co.aospa.glyph.Manager.StatusManager;
 import co.aospa.glyph.Preference.GlyphAnimationPreference;
 import co.aospa.glyph.Utils.ResourceUtils;
 import co.aospa.glyph.Utils.ServiceUtils;
@@ -61,14 +65,17 @@ public class NotifsSettingsFragment extends SettingsBasePreferenceFragment imple
 
     private ListPreference mListPreference;
     private MultiSelectListPreference mMultiSelectListPreference;
+    private SwitchPreferenceCompat mFlipEssentialPreference;
 
     private GlyphAnimationPreference mGlyphAnimationPreference;
+    private SharedPreferences mPrefs;
 
     private Handler mHandler = new Handler();
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         addPreferencesFromResource(R.xml.glyph_notifs_settings);
+        mPrefs = getPreferenceManager().getSharedPreferences();
 
         mScreen = this.getPreferenceScreen();
         getActivity().setTitle(R.string.glyph_settings_notifs_toggle_title);
@@ -85,6 +92,15 @@ public class NotifsSettingsFragment extends SettingsBasePreferenceFragment imple
         mListPreference.setEntryValues(ResourceUtils.getNotificationAnimations());
         if (!ArrayUtils.contains(ResourceUtils.getNotificationAnimations(), mListPreference.getValue())) {
             mListPreference.setValue(ResourceUtils.getString("glyph_settings_notifs_animations_default"));
+        }
+
+        mFlipEssentialPreference = (SwitchPreferenceCompat) findPreference(Constants.GLYPH_NOTIFS_FLIP_ESSENTIAL_ENABLE);
+        mFlipEssentialPreference.setEnabled(mPrefs.getBoolean(Constants.GLYPH_FLIP_ENABLE, false));
+        mFlipEssentialPreference.setOnPreferenceChangeListener(this);
+        
+        if (!mPrefs.getBoolean(Constants.GLYPH_FLIP_ENABLE, false)) {
+            mFlipEssentialPreference.setEnabled(false);
+            mFlipEssentialPreference.setSummary(R.string.glyph_settings_notifs_flip_essential_toggle_disabled_summary);
         }
 
         mGlyphAnimationPreference = (GlyphAnimationPreference) findPreference(Constants.GLYPH_NOTIFS_SUB_PREVIEW);
@@ -132,6 +148,18 @@ public class NotifsSettingsFragment extends SettingsBasePreferenceFragment imple
 
         if (preferenceKey.equals(Constants.GLYPH_NOTIFS_SUB_ESSENTIAL)) {
             //if (DEBUG) Log.d(TAG, "onPreferenceChange: " + newValue.toString());
+        }
+
+        if (preferenceKey.equals(Constants.GLYPH_NOTIFS_FLIP_ESSENTIAL_ENABLE)) {
+            boolean flipEssential = (Boolean) newValue;
+            if (flipEssential && SettingsManager.isGlyphFlipEnabled() 
+            && StatusManager.isEssentialLedActive()) {
+                AnimationManager.stopEssential();
+                StatusManager.setEssentialLedPending(true);
+            }
+            if (!flipEssential && StatusManager.isEssentialLedPending()) {
+                AnimationManager.playEssential();
+            }
         }
 
         //mHandler.post(() -> ServiceUtils.checkGlyphService());

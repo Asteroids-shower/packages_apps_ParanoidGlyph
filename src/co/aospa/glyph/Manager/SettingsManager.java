@@ -86,6 +86,12 @@ public final class SettingsManager {
                 .getBoolean(Constants.GLYPH_FLIP_ENABLE, false) && isGlyphEnabled();
     }
 
+    public static boolean isGlyphFlipEssentialEnabled() {
+        Context ctx = getContext();
+        return PreferenceManager.getDefaultSharedPreferences(ctx)
+                .getBoolean(Constants.GLYPH_NOTIFS_FLIP_ESSENTIAL_ENABLE, false) && isGlyphEnabled();
+    }
+
     public static int getGlyphBrightness() {
         int[] levels = Constants.getBrightnessLevels();
         int brightnessSetting = getGlyphBrightnessSetting();

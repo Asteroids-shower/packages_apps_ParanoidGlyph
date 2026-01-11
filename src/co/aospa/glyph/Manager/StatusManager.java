@@ -29,6 +29,7 @@ public final class StatusManager {
     private static boolean volumeAnimationActive = false;
     private static boolean callLedActive = false;
     private static boolean essentialLedActive = false;
+    private static boolean essentialLedPending = false;
     private static boolean progressAnimationActive = false;
     private static int progressType = 0;
     private static int progressLedLast = 0;
@@ -82,6 +83,14 @@ public final class StatusManager {
 
     public static boolean isEssentialLedActive() {
         return essentialLedActive;
+    }
+
+    public static boolean isEssentialLedPending() {
+        return ! essentialLedActive && essentialLedPending;
+    }
+
+    public static void setEssentialLedPending(boolean status) {
+        essentialLedPending = status;
     }
 
     public static void setEssentialLedActive(boolean status) {

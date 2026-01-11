@@ -46,8 +46,10 @@ import android.widget.CompoundButton.OnCheckedChangeListener;
 
 import co.aospa.glyph.R;
 import co.aospa.glyph.Constants.Constants;
+import co.aospa.glyph.Manager.AnimationManager;
 import co.aospa.glyph.Manager.GlyphScheduleManager;
 import co.aospa.glyph.Manager.SettingsManager;
+import co.aospa.glyph.Manager.StatusManager;
 import co.aospa.glyph.Utils.ResourceUtils;
 import co.aospa.glyph.Utils.ServiceUtils;
 
@@ -201,7 +203,17 @@ public class SettingsFragment extends SettingsBasePreferenceFragment implements 
         if (preferenceKey.equals(Constants.GLYPH_FLIP_ENABLE)) {
             boolean flipEnabled = (Boolean) newValue;
             mFlipRingerModePreference.setEnabled(flipEnabled && SettingsManager.isGlyphEnabled());
+            if (flipEnabled && SettingsManager.isGlyphFlipEssentialEnabled()) {
+                if (StatusManager.isEssentialLedActive()) {
+                    AnimationManager.stopEssential();
+                    StatusManager.setEssentialLedPending(true);
+                } 
+            }  
+            if (!flipEnabled && StatusManager.isEssentialLedPending()) {
+                    AnimationManager.playEssential();
+            }
         }
+
         if (preferenceKey.equals(Constants.GLYPH_PROGRESS_ENABLE)) {
             boolean enabled = (Boolean) newValue;
             mProgressMusicPreference.setEnabled(enabled && SettingsManager.isGlyphEnabled());

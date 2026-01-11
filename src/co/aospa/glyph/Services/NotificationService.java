@@ -281,7 +281,19 @@ public class NotificationService extends NotificationListenerService
                 }
             }
         }
-        if (playEssential) {
+
+        if (SettingsManager.isGlyphFlipEssentialEnabled()) {
+            Intent intent = new Intent(mContext, FlipToGlyphService.class);
+            if (playEssential) {
+                StatusManager.setEssentialLedPending(true);
+                intent.putExtra("type", 1);
+            } else {
+                StatusManager.setEssentialLedPending(false);
+                intent.putExtra("type", 0);
+            }
+            intent.setAction(Constants.ACTION_FLIP_HANDLE_ESSENTIAL);
+            mContext.startService(intent);
+        } else if (playEssential) {
             AnimationManager.playEssential();
         } else {
             AnimationManager.stopEssential();

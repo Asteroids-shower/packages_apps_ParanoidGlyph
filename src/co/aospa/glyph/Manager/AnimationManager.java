@@ -409,6 +409,7 @@ public final class AnimationManager {
                     }
                 } catch (InterruptedException e) {}
                 StatusManager.setAnimationActive(false);
+                StatusManager.setEssentialLedPending(false);
                 StatusManager.setEssentialLedActive(true);
                 if (DEBUG) Log.d(TAG, "Done playing animation | name: essential");
             });

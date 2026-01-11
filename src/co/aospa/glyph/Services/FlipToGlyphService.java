@@ -30,7 +30,10 @@ import android.util.Log;
 
 import co.aospa.glyph.Manager.AnimationManager;
 import co.aospa.glyph.Manager.SettingsManager;
+import co.aospa.glyph.Manager.StatusManager;
 import co.aospa.glyph.Sensors.FlipToGlyphSensor;
+
+import co.aospa.glyph.Constants.Constants;
 
 public class FlipToGlyphService extends Service {
 
@@ -46,6 +49,7 @@ public class FlipToGlyphService extends Service {
     private AudioManager mAudioManager;
     private FlipToGlyphSensor mFlipToGlyphSensor;
     private Context mContext;
+   
 
     @Override
     public void onCreate() {
@@ -66,6 +70,11 @@ public class FlipToGlyphService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (DEBUG) Log.d(TAG, "Starting service");
         mFlipToGlyphSensor.enable();
+        if (Constants.ACTION_FLIP_HANDLE_ESSENTIAL.equals(intent.getAction())) {
+            if (DEBUG) Log.d(TAG, "Recieved essential LED intent");
+            int intentType = intent.getIntExtra("type", 0);
+            handleEssential(intentType == 0, isFlipped);
+        }
         return START_STICKY;
     }
 
@@ -80,6 +89,25 @@ public class FlipToGlyphService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
+    }
+
+    private void handleEssential(boolean shouldStop, boolean isFlipped) {
+        if (isFlipped) {
+            if (!shouldStop) {
+                if (StatusManager.isEssentialLedPending()) {
+                    AnimationManager.playEssential();
+                }
+            } else {
+                AnimationManager.stopEssential();
+                StatusManager.setEssentialLedPending(false);
+            }
+        }
+        if (!isFlipped) {
+            if (shouldStop) {
+                AnimationManager.stopEssential();
+                StatusManager.setEssentialLedPending(true);
+            }
+        }
     }
 
     private void onFlip(boolean flipped) {
@@ -99,10 +127,16 @@ public class FlipToGlyphService extends Service {
             } else {
                 if (DEBUG) Log.d(TAG, "Following system ringer mode: " + ringerMode);
             }
+            if (SettingsManager.isGlyphFlipEssentialEnabled()) {
+                handleEssential(false, flipped);
+            }
         } else {
             int preferredMode = SettingsManager.getFlipRingerMode();
             if (preferredMode != -1) {
                 mAudioManager.setRingerModeInternal(ringerMode);
+            }
+            if (SettingsManager.isGlyphFlipEssentialEnabled()) {
+                handleEssential(true, flipped);
             }
         }
         isFlipped = flipped;
